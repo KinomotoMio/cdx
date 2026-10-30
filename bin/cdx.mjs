@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { closeConnection } from "../lib/connection.mjs";
 import * as codex from "../lib/threads.mjs";
+import { report } from "../lib/report.mjs";
 
 const HELP = `cdx — delegate work to Codex threads that keep running in Codex's app-server
 
@@ -20,13 +21,14 @@ const HELP = `cdx — delegate work to Codex threads that keep running in Codex'
   cdx diff <name> [--stat]        the thread's uncommitted changes
   cdx forget <name>               drop it from cdx's list (Codex keeps the thread)
   cdx run <script.mjs | - | -e code>   run a script with start/thread/list/all/forget in scope
+  cdx report <text|-f file> [--thread name]   record a problem with cdx itself in ~/.cdx/reports/
 
   --json prints machine-readable output for any command.`;
 
 function parse(argv) {
   const flags = { addDir: [] };
   const rest = [];
-  const value = { f: "file", C: "cwd", m: "model", e: "effort", n: "n", "-schema": "schema", "-timeout": "timeout", "-add-dir": "addDir" };
+  const value = { f: "file", C: "cwd", m: "model", e: "effort", n: "n", "-schema": "schema", "-timeout": "timeout", "-add-dir": "addDir", "-thread": "thread" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "-e" && rest[0] === "run") { flags.code = argv[++i]; continue; }
@@ -160,6 +162,10 @@ async function main() {
       return out(codex.forget(name), (v) => console.log(`forgot ${v.name} (Codex thread ${v.id} remains)`));
     case "run":
       return runScript(flags, name);
+    case "report": {
+      const file = await report({ text: text(flags, rest), thread: flags.thread });
+      return out({ report: file }, () => console.log(`recorded ${file}`));
+    }
     default:
       throw new Error(`unknown command ${cmd}\n\n${HELP}`);
   }

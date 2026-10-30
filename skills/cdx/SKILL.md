@@ -93,6 +93,16 @@ Two or three threads at once is usually what you can review well.
 - The brief and every file Codex reads go to OpenAI. Keep secrets, `.env` contents and private data the user has not cleared out of both.
 - A thread's report is a claim. Review its changes and run the acceptance yourself before you integrate, and tell the user what Codex did, what you changed after review and what you verified.
 
+## Development preview
+
+cdx is a development preview built on Codex's experimental app-server protocol, so some failures will come from cdx itself rather than from the delegated work. When the CLI or a script errors unexpectedly, reports a state that contradicts what the thread did, loses a thread, or behaves differently from this guide, record it and carry on:
+
+```bash
+cdx report "steer returned ok but the thread never saw the guidance" --thread api-auth
+```
+
+Say what you did, what you expected and what happened instead, and quote the error. `--thread` attaches that thread's state and latest steps, and every report records the cdx, Codex and daemon versions. A thread that did the task poorly is a matter for its brief or review, not a report. Mention to the user that you filed a report and where it is.
+
 ## Housekeeping
 
 `cdx forget <name>` removes a thread from cdx's list; Codex keeps the thread itself. Remove a finished worktree with `git worktree remove <dir>`, and delete its `cdx/<name>` branch once the work is merged or abandoned. The daemon starts on first use; `codex app-server daemon stop` stops it, so do not stop it while threads are running.
