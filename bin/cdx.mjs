@@ -10,13 +10,13 @@ import { report } from "../lib/report.mjs";
 const HELP = `cdx — delegate work to Codex threads that keep running in Codex's app-server
 
   cdx start <name> [prompt] [-f brief.md] [-C dir] [--worktree] [-m model] [-e effort]
-                   [--read-only] [--net] [--add-dir dir]... [--schema file.json] [--wait]
+                   [--read-only] [--net] [--add-dir dir]... [-i image]... [--schema file.json] [--wait]
   cdx ls                          threads cdx started, with their state
   cdx show <name> [-n 15]         state and latest steps
   cdx wait <name> [--timeout 30m] block until the current turn ends; print its result
   cdx result <name>               how the last turn ended
   cdx steer <name> <text|-f file> add guidance to the running turn
-  cdx send <name> <text|-f file> [--schema file.json] [--wait]   a new turn on a stopped thread
+  cdx send <name> <text|-f file> [-i image]... [--schema file.json] [--wait]   a new turn on a stopped thread
   cdx stop <name>                 interrupt the running turn
   cdx diff <name> [--stat]        the thread's uncommitted changes
   cdx forget <name>               drop it from cdx's list (Codex keeps the thread)
@@ -26,14 +26,14 @@ const HELP = `cdx — delegate work to Codex threads that keep running in Codex'
   --json prints machine-readable output for any command.`;
 
 function parse(argv) {
-  const flags = { addDir: [] };
+  const flags = { addDir: [], image: [] };
   const rest = [];
-  const value = { f: "file", C: "cwd", m: "model", e: "effort", n: "n", "-schema": "schema", "-timeout": "timeout", "-add-dir": "addDir", "-thread": "thread" };
+  const value = { f: "file", C: "cwd", m: "model", e: "effort", n: "n", i: "image", "-schema": "schema", "-timeout": "timeout", "-add-dir": "addDir", "-thread": "thread" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "-e" && rest[0] === "run") { flags.code = argv[++i]; continue; }
     const key = a.startsWith("-") ? value[a.slice(1)] : undefined;
-    if (key === "addDir") flags.addDir.push(argv[++i]);
+    if (key === "addDir" || key === "image") flags[key].push(argv[++i]);
     else if (key) flags[key] = argv[++i];
     else if (a === "--worktree") flags.worktree = true;
     else if (a === "--read-only") flags.readOnly = true;
@@ -81,6 +81,7 @@ function printStep(st) {
     command: () => `$ ${clip(st.command, 160)}${st.exitCode != null ? `  → ${st.exitCode}` : `  (${st.status})`}`,
     files: () => `~ ${st.paths.join(", ")}`,
     tool: () => `tool ${st.tool} (${st.status})`,
+    image: () => `image ${st.path ?? `(${st.status})`}`,
     input: () => `< ${clip(st.text, 200)}`,
   }[st.kind]();
   console.log("  " + line.replace(/\n/g, "\n    "));
@@ -91,6 +92,7 @@ function printResult(r) {
   console.log(`${r.name}  ${r.state}${r.durationMs ? `  ${Math.round(r.durationMs / 1000)}s` : ""}  ${r.cwd}`);
   if (r.error) console.log(`error: ${r.error}`);
   if (r.gitStatus?.length) console.log(`git: ${r.gitStatus.join(", ")}`);
+  for (const img of r.images) console.log(`image: ${img.path ?? `not saved (${img.failure?.message ?? img.status})`}`);
   const failed = r.commands.filter((c) => c.exitCode && c.exitCode !== 0);
   if (failed.length) console.log(`failed commands: ${failed.map((c) => `${clip(c.command, 80)} → ${c.exitCode}`).join("; ")}`);
   if (r.text) console.log(`\n${r.text}`);
@@ -127,6 +129,7 @@ async function main() {
         sandbox: flags.readOnly ? "read" : "write",
         network: flags.net,
         addDirs: flags.addDir,
+        images: flags.image,
         schema: schema(flags),
       });
       if (t.note) console.error(`note: ${t.note}`);
@@ -148,7 +151,7 @@ async function main() {
       await codex.thread(name).steer(text(flags, words));
       return out({ steered: name }, () => console.log(`steered ${name}`));
     case "send": {
-      const t = await codex.thread(name).send(text(flags, words), { schema: schema(flags), effort: flags.effort, model: flags.model });
+      const t = await codex.thread(name).send(text(flags, words), { schema: schema(flags), effort: flags.effort, model: flags.model, images: flags.image });
       if (flags.wait) return out(await t.wait(), printResult);
       return out({ sent: name }, () => console.log(`new turn on ${name}`));
     }

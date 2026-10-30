@@ -1,6 +1,6 @@
 ---
 name: cdx
-description: Delegate work to Codex threads that keep running in Codex's own app-server, then look in on them, steer, stop, continue and review them with the `cdx` CLI or short scripts. Use when a well-specified piece of engineering work can run alongside what you are doing, when several independent pieces can run in parallel, or when the user asks to hand something to Codex.
+description: Delegate work to Codex threads that keep running in Codex's own app-server, then look in on them, steer, stop, continue and review them with the `cdx` CLI or short scripts. Use when a well-specified piece of engineering work can run alongside what you are doing, when several independent pieces can run in parallel, when the user asks to hand something to Codex, or when a raster image needs to be generated or edited (photos, illustrations, mockups, textures, transparent cutouts), which Claude cannot do itself.
 metadata:
   version: "0.1"
 ---
@@ -62,19 +62,20 @@ Each script run is a new process. Write a complete script for each round instead
 
 ### Script reference
 
-- `start({ name, prompt, cwd?, worktree?, model?, effort?, sandbox?: "write" | "read", network?, addDirs?, schema? })` returns a thread handle as soon as Codex accepts the work.
+- `start({ name, prompt, cwd?, worktree?, model?, effort?, sandbox?: "write" | "read", network?, addDirs?, images?, schema? })` returns a thread handle as soon as Codex accepts the work. `images` attaches local image files, as `-i` does on the command line.
 - `thread(nameOrId)` returns a handle to a thread cdx started earlier. `list()` returns every one with its state.
 - Each handle has these methods:
   - `status()` and `peek(n)`: state, last message, and recent steps.
   - `wait({ timeoutMs })`: the result, or `null` when the timeout passes first.
   - `result()`: how the last turn ended, or `null` while it runs.
-  - `steer(text)`, `interrupt()` and `send(text, { schema, effort, model })`.
+  - `steer(text)`, `interrupt()` and `send(text, { schema, effort, model, images })`.
   - `diff({ stat })`: the uncommitted changes in the thread's directory.
 - A result has these fields:
   - `state`, `text`, `parsed` (the reply as JSON when you passed a `schema`) and `error`.
   - `filesChanged`: Codex's patch edits only.
   - `gitStatus`: what git sees, including files written by shell commands.
   - `commands`, each with its exit code, and `durationMs`.
+  - `images`: generated images with their saved `path`, `revisedPrompt` and any `failure`.
 - `all(tasksOrThunks, { limit })` runs thunks with bounded concurrency and keeps the order.
 
 ## Choosing work and models
@@ -86,6 +87,8 @@ Codex does best with a precise contract: backend services against a given API, d
 - `gpt-6-luna` is for mechanical edits.
 
 Two or three threads at once is usually what you can review well.
+
+Codex can also generate and edit raster images, which Claude cannot. Before starting an image thread, read [references/image-generation.md](references/image-generation.md).
 
 ## What must hold
 
