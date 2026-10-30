@@ -1,0 +1,15 @@
+{
+  "name": "cdx",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "cdx": "bin/cdx.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}
