@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "ws": "^8.22.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
   }
 }

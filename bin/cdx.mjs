@@ -18,7 +18,7 @@ const HELP = `cdx — delegate work to Codex threads that keep running in Codex'
   cdx steer <name> <text|-f file> add guidance to the running turn
   cdx send <name> <text|-f file> [-i image]... [--schema file.json] [--wait]   a new turn on a stopped thread
   cdx stop <name>                 interrupt the running turn
-  cdx diff <name> [--stat]        the thread's uncommitted changes
+  cdx diff <name> [--stat]        changes since the thread started
   cdx forget <name>               drop it from cdx's list (Codex keeps the thread)
   cdx run <script.mjs | - | -e code>   run a script with start/thread/list/all/forget in scope
   cdx report <text|-f file> [--thread name]   record a problem with cdx itself in ~/.cdx/reports/

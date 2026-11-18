@@ -69,7 +69,7 @@ Each script run is a new process. Write a complete script for each round instead
   - `wait({ timeoutMs })`: the result, or `null` when the timeout passes first.
   - `result()`: how the last turn ended, or `null` while it runs.
   - `steer(text)`, `interrupt()` and `send(text, { schema, effort, model, images })`.
-  - `diff({ stat })`: the uncommitted changes in the thread's directory.
+  - `diff({ stat })`: changes in the thread's directory since the thread started.
 - A result has these fields:
   - `state`, `text`, `parsed` (the reply as JSON when you passed a `schema`) and `error`.
   - `filesChanged`: Codex's patch edits only.
